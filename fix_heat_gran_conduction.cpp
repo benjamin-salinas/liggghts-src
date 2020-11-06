@@ -433,6 +433,7 @@ void FixHeatGranCond::post_force_eval(int vflag,int cpl_flag)
   int nlocal = atom->nlocal;
   int *mask = atom->mask;
 
+
   updatePtrs();
 
   if(store_contact_data_)
@@ -443,13 +444,18 @@ void FixHeatGranCond::post_force_eval(int vflag,int cpl_flag)
 
   //radiation heat flux compute
   for (i = 0;i<nlocal;i++){
+    heatFlux[i] = 0.;  
+  }
+
+  for (i = 0;i<nlocal;i++){
+    
     xtmp = x[i][0];
     ytmp = x[i][1];
     ztmp = x[i][2];
     radi = radius[i];
     
 
-    for (j = 0;j<nlocal;j++){
+    for (j = i + 1;j<nlocal;j++){
       if (j != i)
       {
           delx = xtmp - x[j][0];
@@ -461,29 +467,25 @@ void FixHeatGranCond::post_force_eval(int vflag,int cpl_flag)
 
         r = sqrt(rsq);
         disless = sqrt(rsq)/(2.*radj);
-        ViewFactor = -5.2e-5+0.064/(disless*disless);
+        //ViewFactor = -5.2e-5+0.064/(disless*disless);
         //printf("ViewFactor:# %.4f\n",ViewFactor);
-        
+        ViewFactor = 1./(nlocal-1);
 
         double tempi = Temp[i]*Temp[i]*Temp[i]*Temp[i];
         double tempj = Temp[j]*Temp[j]*Temp[j]*Temp[j];
 
         //printf("boltzmann constant::# %.4f\n",STEFAN_BOLTZMANN);
 
-        flux2 = STEFAN_BOLTZMANN*ViewFactor*(tempi-tempj);
+        double A_sphere = 4./3.*3.1415926*radj*radj*radj;
+
+        flux2 = STEFAN_BOLTZMANN*ViewFactor*(tempj-tempi)*A_sphere;
         
-        if (flux2 != 0) printf("radiation::flux::# %.4f\n",flux2);
+        //if (flux2 != 0) printf("radiation::flux::# %.4f\n",flux2);
         
         dirFlux2[0] = flux2*delx;
         dirFlux2[1] = flux2*dely;
         dirFlux2[2] = flux2*delz;
 
-        heatFlux[i] += flux2;
-        if (newton_pair || j < nlocal)
-          {
-            heatFlux[j] -= flux2;
-          }
-/*
         if(!cpl_flag)
         {
         
@@ -509,12 +511,13 @@ void FixHeatGranCond::post_force_eval(int vflag,int cpl_flag)
 
         if (cpl_flag && cpl) cpl->add_heat(i,j,flux2);
         //printf("radiation::flux::# %.4f\n",heatFlux2[i]);
-      */
+      
       }
           
     }
-    if (heatFlux[i] != 0) printf("radiation::heatFlux::# %.4f\n",heatFlux[i]);
+    //if (heatFlux[i] != 0) printf("radiation::heatFlux::# %.4f\n",heatFlux[25]);
   }
+  //printf("radiation::heatFlux::# %.4f\n",heatFlux[25]);
 
   // loop over neighbors of my atoms
   for (ii = 0; ii < inum; ii++) {
@@ -633,6 +636,7 @@ void FixHeatGranCond::post_force_eval(int vflag,int cpl_flag)
     }
   }
 
+ printf("time_conduction \n");
   if(newton_pair)
   {
     fix_heatFlux->do_reverse_comm();
