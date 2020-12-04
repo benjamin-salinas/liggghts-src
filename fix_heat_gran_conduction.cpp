@@ -442,10 +442,14 @@ void FixHeatGranCond::post_force_eval(int vflag,int cpl_flag)
     fix_n_conduction_contacts_->set_all(0.);
   }
 
+  //FixWallGran *fwg22222223;
+  //double xplane = fwg22222223->getWallLocation();
+  //printf("Xplane: %.4f \n");
+
   //radiation heat flux compute
-  for (i = 0;i<nlocal;i++){
-    heatFlux[i] = 0.;  
-  }
+  //for (i = 0;i<nlocal;i++){
+  //  heatFlux[i] = 0.;  
+  //}
 
   for (i = 0;i<nlocal;i++){
     
@@ -467,16 +471,16 @@ void FixHeatGranCond::post_force_eval(int vflag,int cpl_flag)
 
         r = sqrt(rsq);
         disless = sqrt(rsq)/(2.*radj);
-        //ViewFactor = -5.2e-5+0.064/(disless*disless);
+        ViewFactor = -5.2e-5+0.064/(disless*disless);
         //printf("ViewFactor:# %.4f\n",ViewFactor);
-        ViewFactor = 1./(nlocal-1);
+        //ViewFactor = 1./(nlocal-1);
 
         double tempi = Temp[i]*Temp[i]*Temp[i]*Temp[i];
         double tempj = Temp[j]*Temp[j]*Temp[j]*Temp[j];
 
         //printf("boltzmann constant::# %.4f\n",STEFAN_BOLTZMANN);
 
-        double A_sphere = 4./3.*3.1415926*radj*radj*radj;
+        double A_sphere = 4.*3.1415926*radj*radj;
 
         flux2 = STEFAN_BOLTZMANN*ViewFactor*(tempj-tempi)*A_sphere;
         
@@ -510,14 +514,14 @@ void FixHeatGranCond::post_force_eval(int vflag,int cpl_flag)
         }
 
         if (cpl_flag && cpl) cpl->add_heat(i,j,flux2);
-        //printf("radiation::flux::# %.4f\n",heatFlux2[i]);
+        //printf("radiation::flux::# %.4f\n",heatFlux[i]);
       
       }
           
     }
     //if (heatFlux[i] != 0) printf("radiation::heatFlux::# %.4f\n",heatFlux[25]);
   }
-  //printf("radiation::heatFlux::# %.4f\n",heatFlux[25]);
+  //printf("radiation::heatFlux::# %.18f\n",heatFlux[25]);
 
   // loop over neighbors of my atoms
   for (ii = 0; ii < inum; ii++) {
@@ -636,7 +640,7 @@ void FixHeatGranCond::post_force_eval(int vflag,int cpl_flag)
     }
   }
 
- printf("time_conduction \n");
+ //printf("time_conduction \n");
   if(newton_pair)
   {
     fix_heatFlux->do_reverse_comm();
