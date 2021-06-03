@@ -209,7 +209,8 @@ class FixWallGran : public Fix, public LIGGGHTS::IContactHistorySetup {
 
   void wall_temperature_unique(bool &has_temp,bool &temp_unique, double &temperature_unique);
   void addHeatFlux(class TriMesh *mesh,int i,const double ri,double rsq,double area_ratio);
-  void addRadiation(int i);
+  void addRadiation(class TriMesh *mesh, int i);
+  
 
  protected:
 

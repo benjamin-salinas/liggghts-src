@@ -1016,7 +1016,17 @@ void FixWallGran::post_force_mesh(int vflag)
       // clean-up contacts
       
       if(fix_contact) fix_contact->cleanUpContacts();
+      
+      int mlocal = atom->nlocal;
+      for (int irad = 0; irad < mlocal; irad++)
+      {
+        if(impl)
+          impl->compute_radiation(this,irad,mesh);
+
+      }
+    
     }
+
 }
 
 /* ----------------------------------------------------------------------
@@ -1155,11 +1165,12 @@ void FixWallGran::post_force_primitive(int vflag)
       }
     }
   }
-
+  
 int nlocal = atom->nlocal;
 for (int irad = 0; irad < nlocal; irad++)
 {
-  if (heattransfer_flag()) addRadiation(irad);
+  if(impl)
+  impl->compute_radiation(this,irad);
 }
 
 }
@@ -1411,7 +1422,7 @@ void FixWallGran::addHeatFlux(TriMesh *mesh,int ip, const double ri, double delt
   //double FixWallGran::getWallLocation()
   //{return primitiveWall_->getparam();}
 
-  void FixWallGran::addRadiation(int ip)
+  void FixWallGran::addRadiation(TriMesh *mesh ,int ip)
   {
     double *radius = atom->radius;
     double **x = atom->x;
@@ -1420,13 +1431,24 @@ void FixWallGran::addHeatFlux(TriMesh *mesh,int ip, const double ri, double delt
     int *mask = atom->mask;
 
     double idelta[3]={};
+    
 
+    if(mesh)
+    {
+      //printf("confirm mesh\n");
+        ScalarContainer<double> *temp_ptr = mesh->prop().getGlobalProperty< ScalarContainer<double> >("Temp");
+        if (!temp_ptr)
+              return;
+        Temp_wall = (*temp_ptr)(0);
+      //printf("get temperature of channel:%.4f\n",Temp_wall);
+    }
     //ScalarContainer<double> *temp_ptr = impl->prop().getGlobalProperty<ScalarContainer<double> >("Temp");
     //double Temp_wallrad = (*temp_ptr)(0);
 
     //printf("Add radiative heat flux to wall\n");
   
-    double deltarad = primitiveWall_->resolveContact(x[ip],radius[ip],idelta)+radius[ip];
+    //DO NOT UNCOMMENT THIS
+    //double deltarad = primitiveWall_->resolveContact(x[ip],radius[ip],idelta)+radius[ip];
     
     //wall-gran radiation
     double viewfactor = 1./nlocal;
@@ -1437,7 +1459,7 @@ void FixWallGran::addHeatFlux(TriMesh *mesh,int ip, const double ri, double delt
     //printf("Temprad: # %.8f\n",Temprad[ip]);  
 
 
-
+    //printf("Number of ip: %d\n",ip);
     double tempi = Temprad[ip]*Temprad[ip]*Temprad[ip]*Temprad[ip];
     double tempw = Temp_wall*Temp_wall*Temp_wall*Temp_wall;
                                         
@@ -1459,4 +1481,6 @@ void FixWallGran::addHeatFlux(TriMesh *mesh,int ip, const double ri, double delt
     
     if(cwl_ && addflag_)
       cwl_->add_heat_wall(ip,hfr);
+      //printf("end of addRadiation\n");
   } 
+
