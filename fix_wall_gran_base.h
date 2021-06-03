@@ -145,6 +145,14 @@ public:
     return cmodel.checkSurfaceIntersect(sidata);
   }
 
+virtual void compute_radiation(FixWallGran * wg, int ip,class TriMesh *mesh = 0)
+{
+  if(wg->heattransfer_flag())
+  {
+    wg->addRadiation(mesh,ip);
+  }
+}
+
   virtual void compute_force(FixWallGran * wg, SurfacesIntersectData & sidata, bool intersectflag,double *vwall, class FixMeshSurface * fix_mesh = 0, int iMesh = 0, class TriMesh *mesh = 0,int iTri = 0)
   {
     const int ip = sidata.i;
